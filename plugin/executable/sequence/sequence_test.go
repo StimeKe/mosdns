@@ -19,22 +19,22 @@
 
 package sequence
 
-import (
-	"context"
-	"errors"
-	"github.com/IrineSistiana/mosdns/v5/coremain"
-	"github.com/IrineSistiana/mosdns/v5/pkg/query_context"
-	"github.com/miekg/dns"
-	"testing"
-)
+// import (
+// 	"context"
+// 	"errors"
+// 	"github.com/IrineSistiana/mosdns/v5/coremain"
+// 	"github.com/IrineSistiana/mosdns/v5/pkg/query_context"
+// 	"github.com/miekg/dns"
+// 	"testing"
+// )
 
-type dummy struct {
-	matched    bool
-	wantErr    error
-	wantR      *dns.Msg
-	dropR      bool
-	wantReturn bool
-}
+// type dummy struct {
+// 	matched    bool
+// 	wantErr    error
+// 	wantR      *dns.Msg
+// 	dropR      bool
+// 	wantReturn bool
+// }
 
 // func (d *dummy) Match(ctx context.Context, qCtx *query_context.Context) (bool, error) {
 // 	if d.wantErr != nil {
