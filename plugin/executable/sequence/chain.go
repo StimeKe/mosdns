@@ -32,8 +32,8 @@ type ChainNode struct {
 
 	// At least one of E or RE must not nil.
 	// In case both are set. E is preferred.
-	E  Executable
-	RE RecursiveExecutable
+	E  []Executable
+	RE []RecursiveExecutable
 }
 
 type ChainWalker struct {
@@ -70,19 +70,22 @@ checkMatchesLoop:
 
 		// Exec rules' executables in loop, or in stack if it is a recursive executable.
 		switch {
-		case n.E != nil:
-			if err := n.E.Exec(ctx, qCtx); err != nil {
-				return err
+		case len(n.E) > 0:
+			for _, e := range n.E {
+				if err := e.Exec(ctx, qCtx); err != nil {
+					return err
+				}
 			}
 			p++
 			continue
-		case n.RE != nil:
-			next := ChainWalker{
-				p:        p + 1,
-				chain:    w.chain,
-				jumpBack: w.jumpBack,
+		case len(n.RE) > 0:
+			for _, re := range n.RE {
+				if err := re.Exec(ctx, qCtx, ChainWalker{}); err != nil {
+					return err
+				}
 			}
-			return n.RE.Exec(ctx, qCtx, next)
+			p++
+			continue
 		default:
 			panic("n cannot be executed")
 		}
@@ -126,12 +129,14 @@ func (s *Sequence) newNode(bq BQ, r RuleConfig, ri int) (*ChainNode, error) {
 	}
 
 	// init exec
-	e, re, err := s.newExec(bq, r, ri)
-	if err != nil {
-		return nil, fmt.Errorf("failed to init exec, %w", err)
+	for ei, ec := range r.Exec {
+		e, re, err := s.newExec(bq, ec, ri, mi)
+		if err != nil {
+			return nil, fmt.Errorf("failed to init exec #%d, %w", ei, err)
+		}
+		n.E = append(n.E, e)
+		n.RE = append(n.RE, e)
 	}
-	n.E = e
-	n.RE = re
 	return n, nil
 }
 
@@ -172,30 +177,30 @@ func (s *Sequence) newMatcher(bq BQ, mc MatchConfig, ri, mi int) (Matcher, error
 	return m, nil
 }
 
-func (s *Sequence) newExec(bq BQ, rc RuleConfig, ri int) (Executable, RecursiveExecutable, error) {
+func (s *Sequence) newExec(bq BQ, ec ExecConfig, ri int, ei int) (Executable, RecursiveExecutable, error) {
 	var exec any
 	switch {
-	case len(rc.Tag) > 0:
-		p := bq.M().GetPlugin(rc.Tag)
+	case len(ec.Tag) > 0:
+		p := bq.M().GetPlugin(ec.Tag)
 		if p == nil {
-			return nil, nil, fmt.Errorf("can not find executable %s", rc.Tag)
+			return nil, nil, fmt.Errorf("can not find executable %s", ec.Tag)
 		}
 		if qc, ok := p.(QuickConfigurableExec); ok {
-			v, err := qc.QuickConfigureExec(rc.Args)
+			v, err := qc.QuickConfigureExec(ec.Args)
 			if err != nil {
-				return nil, nil, fmt.Errorf("fail to configure plugin %s, %w", rc.Tag, err)
+				return nil, nil, fmt.Errorf("fail to configure plugin %s, %w", ec.Tag, err)
 			}
 			exec = v
 		} else {
 			exec = p
 		}
 
-	case len(rc.Type) > 0:
-		f := GetExecQuickSetup(rc.Type)
+	case len(ec.Type) > 0:
+		f := GetExecQuickSetup(ec.Type)
 		if f == nil {
-			return nil, nil, fmt.Errorf("invalid executable type %s", rc.Type)
+			return nil, nil, fmt.Errorf("invalid executable type %s", ec.Type)
 		}
-		v, err := f(NewBQ(bq.M(), bq.L().Named(fmt.Sprintf("r%d", ri))), rc.Args)
+		v, err := f(NewBQ(bq.M(), bq.L().Named(fmt.Sprintf("r%d.e%d", ri, ei))), ec.Args)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to init executable, %w", err)
 		}
