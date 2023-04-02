@@ -31,8 +31,16 @@ func Test_parseExec(t *testing.T) {
 		args string
 		want ExecConfig
 	}{
-		{"", " $t1   a 1  ", "t1", "", "a 1"},
-		{"", " typ   a 1  ", "", "typ", "a 1"},
+		{"", " $t1   a 1  ", ExecConfig{
+			Tag:     "",
+			Type:    "typ",
+			Args:    "a 1",
+		}},
+		{"", " typ   a 1  ", ExecConfig{
+			Tag:     "",
+			Type:    "typ",
+			Args:    "a 1",
+		}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
