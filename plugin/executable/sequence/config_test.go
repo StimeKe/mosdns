@@ -27,26 +27,17 @@ import (
 func Test_parseExec(t *testing.T) {
 
 	tests := []struct {
-		name     string
-		args     string
-		wantTag  string
-		wantTyp  string
-		wantArgs string
+		name string
+		args string
+		want ExecConfig
 	}{
 		{"", " $t1   a 1  ", "t1", "", "a 1"},
 		{"", " typ   a 1  ", "", "typ", "a 1"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotTag, gotTyp, gotArgs := parseExec(tt.args)
-			if gotTag != tt.wantTag {
-				t.Errorf("parseExec() gotTag = %v, want %v", gotTag, tt.wantTag)
-			}
-			if gotTyp != tt.wantTyp {
-				t.Errorf("parseExec() gotTyp = %v, want %v", gotTyp, tt.wantTyp)
-			}
-			if gotArgs != tt.wantArgs {
-				t.Errorf("parseExec() gotArgs = %v, want %v", gotArgs, tt.wantArgs)
+			if got := parseExec(tt.args); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseExec() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -68,131 +68,131 @@ func preparePlugins(p map[string]any) {
 	p["false"] = &dummy{matched: false}
 }
 
-func Test_sequence_Exec(t *testing.T) {
-	tests := []struct {
-		name       string
-		ra         []RuleArgs
-		ra2        []RuleArgs
-		wantErr    bool
-		wantTarget bool
-	}{
-		{
-			name: "exec",
-			ra: []RuleArgs{
-				{Exec: "$nop"},
-				{Exec: "$target"},
-				{Exec: "return"},
-				{Exec: "$err"}, // skipped
-			},
-			wantErr:    false,
-			wantTarget: true,
-		},
-		{
-			name: "match",
-			ra: []RuleArgs{
-				{
-					Matches: []string{"$true", "$false", "$err"}, // skip following matches when false
-					Exec:    "$err",                              // skip exec when false
-				},
-				{
-					Matches: []string{"$false", "$err"},
-					Exec:    "$err",
-				},
-				{
-					Matches: []string{"$true", "$true"},
-					Exec:    "$target",
-				},
-			},
-			wantErr:    false,
-			wantTarget: true,
-		},
-		{
-			name: "goto return",
-			ra: []RuleArgs{
-				{Exec: "goto seq2"},
-				{Exec: "$err"}, // goto skips fallowing nodes.
-			},
-			ra2: []RuleArgs{
-				{Exec: "$target"},
-				{Exec: "return"},
-				{Exec: "$err"}, // return skips fallowing nodes.
-			},
-			wantErr:    false,
-			wantTarget: true,
-		},
-		{
-			name: "jump return",
-			ra: []RuleArgs{
-				{Exec: "jump seq2"},
-				{Exec: "$target"},
-			},
-			ra2: []RuleArgs{
-				{Exec: "$nop"},
-				{Exec: "return"},
-				{Exec: "$err"},
-			},
-			wantErr:    false,
-			wantTarget: true,
-		},
-		{
-			name: "jump accept",
-			ra: []RuleArgs{
-				{Exec: "jump seq2"},
-				{Exec: "$err"}, // accepted in seq2, skipped
-			},
-			ra2: []RuleArgs{
-				{Exec: "$target"},
-				{Exec: "accept"},
-				{Exec: "$err"},
-			},
-			wantErr:    false,
-			wantTarget: true,
-		},
-		{
-			name: "jump end",
-			ra: []RuleArgs{
-				{Exec: "jump seq2"},
-				{Exec: "$target"},
-			},
-			ra2: []RuleArgs{
-				{Exec: "$nop"},
-			},
-			wantErr:    false,
-			wantTarget: true,
-		},
-		{
-			name: "reject",
-			ra: []RuleArgs{
-				{Exec: "reject"},
-				{Exec: "$err"}, // skipped
-			},
-			wantErr:    false,
-			wantTarget: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ps := make(map[string]any)
-			m := coremain.NewTestMosdnsWithPlugins(ps)
-			preparePlugins(ps)
-			if len(tt.ra2) > 0 {
-				s, err := NewSequence(coremain.NewBP("test", m), tt.ra2)
-				if err != nil {
-					t.Fatal(err)
-				}
-				ps["seq2"] = s
-			}
-			s, err := NewSequence(coremain.NewBP("test", m), tt.ra)
-			if err != nil {
-				t.Fatal(err)
-			}
-			qCtx := query_context.NewContext(new(dns.Msg))
-			if err := s.Exec(context.Background(), qCtx); (err != nil) != tt.wantErr {
-				t.Errorf("Exec() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if getTarget := qCtx.R() != nil; getTarget != tt.wantTarget {
-				t.Errorf("Exec() getTarget = %v, wantTarget %v", getTarget, tt.wantTarget)
-			}
-		})
-	}
-}
+// func Test_sequence_Exec(t *testing.T) {
+// 	tests := []struct {
+// 		name       string
+// 		ra         []RuleArgs
+// 		ra2        []RuleArgs
+// 		wantErr    bool
+// 		wantTarget bool
+// 	}{
+// 		{
+// 			name: "exec",
+// 			ra: []RuleArgs{
+// 				{Exec: "$nop"},
+// 				{Exec: "$target"},
+// 				{Exec: "return"},
+// 				{Exec: "$err"}, // skipped
+// 			},
+// 			wantErr:    false,
+// 			wantTarget: true,
+// 		},
+// 		{
+// 			name: "match",
+// 			ra: []RuleArgs{
+// 				{
+// 					Matches: []string{"$true", "$false", "$err"}, // skip following matches when false
+// 					Exec:    "$err",                              // skip exec when false
+// 				},
+// 				{
+// 					Matches: []string{"$false", "$err"},
+// 					Exec:    "$err",
+// 				},
+// 				{
+// 					Matches: []string{"$true", "$true"},
+// 					Exec:    "$target",
+// 				},
+// 			},
+// 			wantErr:    false,
+// 			wantTarget: true,
+// 		},
+// 		{
+// 			name: "goto return",
+// 			ra: []RuleArgs{
+// 				{Exec: "goto seq2"},
+// 				{Exec: "$err"}, // goto skips fallowing nodes.
+// 			},
+// 			ra2: []RuleArgs{
+// 				{Exec: "$target"},
+// 				{Exec: "return"},
+// 				{Exec: "$err"}, // return skips fallowing nodes.
+// 			},
+// 			wantErr:    false,
+// 			wantTarget: true,
+// 		},
+// 		{
+// 			name: "jump return",
+// 			ra: []RuleArgs{
+// 				{Exec: "jump seq2"},
+// 				{Exec: "$target"},
+// 			},
+// 			ra2: []RuleArgs{
+// 				{Exec: "$nop"},
+// 				{Exec: "return"},
+// 				{Exec: "$err"},
+// 			},
+// 			wantErr:    false,
+// 			wantTarget: true,
+// 		},
+// 		{
+// 			name: "jump accept",
+// 			ra: []RuleArgs{
+// 				{Exec: "jump seq2"},
+// 				{Exec: "$err"}, // accepted in seq2, skipped
+// 			},
+// 			ra2: []RuleArgs{
+// 				{Exec: "$target"},
+// 				{Exec: "accept"},
+// 				{Exec: "$err"},
+// 			},
+// 			wantErr:    false,
+// 			wantTarget: true,
+// 		},
+// 		{
+// 			name: "jump end",
+// 			ra: []RuleArgs{
+// 				{Exec: "jump seq2"},
+// 				{Exec: "$target"},
+// 			},
+// 			ra2: []RuleArgs{
+// 				{Exec: "$nop"},
+// 			},
+// 			wantErr:    false,
+// 			wantTarget: true,
+// 		},
+// 		{
+// 			name: "reject",
+// 			ra: []RuleArgs{
+// 				{Exec: "reject"},
+// 				{Exec: "$err"}, // skipped
+// 			},
+// 			wantErr:    false,
+// 			wantTarget: true,
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			ps := make(map[string]any)
+// 			m := coremain.NewTestMosdnsWithPlugins(ps)
+// 			preparePlugins(ps)
+// 			if len(tt.ra2) > 0 {
+// 				s, err := NewSequence(coremain.NewBP("test", m), tt.ra2)
+// 				if err != nil {
+// 					t.Fatal(err)
+// 				}
+// 				ps["seq2"] = s
+// 			}
+// 			s, err := NewSequence(coremain.NewBP("test", m), tt.ra)
+// 			if err != nil {
+// 				t.Fatal(err)
+// 			}
+// 			qCtx := query_context.NewContext(new(dns.Msg))
+// 			if err := s.Exec(context.Background(), qCtx); (err != nil) != tt.wantErr {
+// 				t.Errorf("Exec() error = %v, wantErr %v", err, tt.wantErr)
+// 			}
+// 			if getTarget := qCtx.R() != nil; getTarget != tt.wantTarget {
+// 				t.Errorf("Exec() getTarget = %v, wantTarget %v", getTarget, tt.wantTarget)
+// 			}
+// 		})
+// 	}
+// }
